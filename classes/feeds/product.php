@@ -42,7 +42,7 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         $item = self::$dom->createElement( 'Brand' );
         $container->appendChild( $item );
 
-        $item->appendChild( self::$dom->createElement( 'Name', htmlentities( self::$ini->variable( 'ProductsFeed', 'BrandName' ) ) ) );
+        $item->appendChild( self::$dom->createElement( 'Name', self::htmlentities( self::$ini->variable( 'ProductsFeed', 'BrandName' ) ) ) );
         $item->appendChild( self::$dom->createElement( 'ExternalId', self::$ini->variable( 'ProductsFeed', 'BrandExternalID' ) ) );
     }
 
@@ -148,12 +148,16 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             }
         }
 
+        if( count( $translatableAttributes['ImageUrls'] ) === 0 ) {
+            unset( $translatableAttributes['ImageUrls'] );
+        }
+
         foreach( $translatableAttributes as $attr => $values ) {
             $container = self::$dom->createElement( $attr );
 
             foreach( $values as $languageCode => $value ) {
-                $element = self::$dom->createElement( substr( $attr, 0, -1 ), htmlentities( $value ) );
-                $element->setAttribute( 'locale', $languageCode );
+                $element = self::$dom->createElement( substr( $attr, 0, -1 ), self::htmlentities( $value ) );
+                $element->setAttribute( 'locale', str_replace( '-', '_', $languageCode ) );
                 $container->appendChild( $element );
             }
 
@@ -166,6 +170,7 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
     protected static function getProductAttributes( eZContentObject $object ) {
         $attributes = array(
             self::getProductID( $object ),
+            self::getModelNumbers( $object ),
             self::getProductBrandID(),
             self::getProductCategoryID( $object )
         );
@@ -197,12 +202,18 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             }
         }
 
+        if( count( $translatableAttributes['ImageUrls'] ) === 0 ) {
+            unset( $translatableAttributes['ImageUrls'] );
+        }
+
         foreach( $translatableAttributes as $attr => $values ) {
             $container = self::$dom->createElement( $attr );
 
             foreach( $values as $languageCode => $value ) {
-                $element = self::$dom->createElement( substr( $attr, 0, -1 ), htmlentities( $value ) );
-                $element->setAttribute( 'locale', $languageCode );
+                $value = self::htmlentities( $value );
+
+                $element = self::$dom->createElement( substr( $attr, 0, -1 ), $value );
+                $element->setAttribute( 'locale', str_replace( '-', '_', $languageCode ) );
                 $container->appendChild( $element );
             }
 
@@ -258,6 +269,8 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             eZSys::instance()->IndexFile = '/';
         }
 
+        $url = str_replace( html_entity_decode( '&trade;' ), '%E2%84%A2', $url );
+
         return $url;
     }
 
@@ -281,10 +294,22 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
     }
 
     public static function getProductID( eZContentObject $object ) {
+        return self::$dom->createElement( 'ExternalId', self::getProductSKU( $object ) );
+    }
+
+    public static function getModelNumbers( eZContentObject $object ) {
+        $container    = self::$dom->createElement( 'ModelNumbers' );
+        $modeulNumber = self::$dom->createElement( 'ModelNumber', self::getProductSKU( $object ) );
+        $container->appendChild( $modeulNumber );
+
+        return $container;
+    }
+
+    private static function getProductSKU( eZContentObject $object ) {
         $dataMap    = $object->attribute( 'data_map' );
         $externalID = $dataMap['product_id']->attribute( 'content' ) . '_' . $dataMap['version']->attribute( 'content' );
-
-        return self::$dom->createElement( 'ExternalId', htmlentities( $externalID ) );
+        $externalID = str_replace( '/', '|', $externalID );
+        return self::htmlentities( $externalID );
     }
 
     protected static function getProductBrandID() {

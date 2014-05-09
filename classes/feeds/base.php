@@ -108,4 +108,10 @@ class BazaarVoiceFeedBase {
         return true;
     }
 
+    protected static function htmlentities( $string ) {
+        $string = htmlentities( $string, ENT_COMPAT | ENT_XML1 );
+
+        return $string;
+    }
+
 }
