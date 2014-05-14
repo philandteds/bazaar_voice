@@ -97,11 +97,16 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
                 continue;
             }
 
-            $item = self::$dom->createElement( $params['item_tag'] );
-            $container->appendChild( $item );
-
             if( is_callable( $params['extract_params_callback'] ) ) {
-                $attributes = call_user_func( $params['extract_params_callback'], $object );
+                try {
+                    $attributes = call_user_func( $params['extract_params_callback'], $object );
+                } catch( Exception $e ) {
+                    continue;
+                }
+
+                $item = self::$dom->createElement( $params['item_tag'] );
+                $container->appendChild( $item );
+
                 foreach( $attributes as $attr ) {
                     if( $attr instanceof DOMNode === false ) {
                         continue;
@@ -212,7 +217,12 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             foreach( $values as $languageCode => $value ) {
                 $value = self::htmlentities( $value );
 
-                $element = self::$dom->createElement( substr( $attr, 0, -1 ), $value );
+                $element = self::$dom->createElement( substr( $attr, 0, -1 ) );
+                if( $attr == 'Descriptions' ) {
+                    $element->appendChild( self::$dom->createCDATASection( $value ) );
+                } else {
+                    $element->nodeValue = $value;
+                }
                 $element->setAttribute( 'locale', str_replace( '-', '_', $languageCode ) );
                 $container->appendChild( $element );
             }
@@ -238,7 +248,12 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
                 $dataMap[$item->contentClassAttributeIdentifier()] = $item;
             }
 
-            $code          = self::getLanguageCode( $translation );
+            // We are processing only eng translations
+            $code = self::getLanguageCode( $translation );
+            if( strpos( $code, 'en-' ) !== 0 ) {
+                continue;
+            }
+
             $return[$code] = $dataMap;
         }
 
@@ -294,7 +309,12 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
     }
 
     public static function getProductID( eZContentObject $object ) {
-        return self::$dom->createElement( 'ExternalId', self::getProductSKU( $object ) );
+        $externalID = self::getProductSKU( $object );
+        if( strlen( $externalID ) === 0 ) {
+            throw new Exception( 'ExternalId can not be empty' );
+        }
+
+        return self::$dom->createElement( 'ExternalId', $externalID );
     }
 
     public static function getModelNumbers( eZContentObject $object ) {
@@ -307,8 +327,14 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
 
     private static function getProductSKU( eZContentObject $object ) {
         $dataMap    = $object->attribute( 'data_map' );
-        $externalID = $dataMap['product_id']->attribute( 'content' ) . '_' . $dataMap['version']->attribute( 'content' );
+        $externalID = $dataMap['product_id']->attribute( 'content' );
+        $version    = trim( $dataMap['version']->attribute( 'content' ) );
+        if( strlen( $version ) > 0 ) {
+            $externalID .= '_' . $version;
+        }
         $externalID = str_replace( '/', '|', $externalID );
+        $externalID = strtoupper( $externalID );
+
         return self::htmlentities( $externalID );
     }
 
