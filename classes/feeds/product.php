@@ -325,7 +325,7 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         return $container;
     }
 
-    private static function getProductSKU( eZContentObject $object ) {
+    public static function getProductSKU( eZContentObject $object ) {
         $dataMap    = $object->attribute( 'data_map' );
         $externalID = $dataMap['product_id']->attribute( 'content' );
         $version    = trim( $dataMap['version']->attribute( 'content' ) );
