@@ -181,7 +181,6 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         );
 
         $translatableAttributes = array(
-            'Names'           => array(),
             'Descriptions'    => array(),
             'ProductPageUrls' => array(),
             'ImageUrls'       => array()
@@ -189,7 +188,6 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         $translations           = self::fetchTranslatedDataMaps( $object );
         foreach( $translations as $languageCode => $dataMap ) {
             $translatableAttributes['ProductPageUrls'][$languageCode] = self::getTranslatedURL( $languageCode, $object->attribute( 'main_node' ) );
-            $translatableAttributes['Names'][$languageCode]           = $dataMap['name']->attribute( 'content' );
             $translatableAttributes['Descriptions'][$languageCode]    = strip_tags( @$dataMap['short_description']->attribute( 'content' )->attribute( 'output' )->attribute( 'output_text' ) );
 
             $images = $dataMap['images']->attribute( 'content' );
@@ -211,6 +209,15 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             unset( $translatableAttributes['ImageUrls'] );
         }
 
+        // We are using 1 SA to handle names
+        $nameDataMap = BazaarVoiceFetchFunctions::fetchTranslatedObjectDataMap( $object->attribute( 'id' ), self::$ini->variable( 'ProductsFeed', 'NamesSA' ) );
+        if( is_array( $nameDataMap ) === false || isset( $nameDataMap['data_map'] ) === false ) {
+            throw new Exception( 'Name datamap can not be fetched' );
+        }
+        $translatableAttributes['Names'] = array(
+            self::getLanguageCode( $nameDataMap['language'] ) => $nameDataMap['data_map']['name']->attribute( 'content' )
+        );
+
         foreach( $translatableAttributes as $attr => $values ) {
             $container = self::$dom->createElement( $attr );
 
@@ -229,7 +236,6 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
 
             $attributes[] = $container;
         }
-
 
         return $attributes;
     }
