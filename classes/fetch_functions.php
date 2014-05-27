@@ -13,57 +13,36 @@ class BazaarVoiceFetchFunctions {
     }
 
     public static function fetchTranslatedObjectDataMap( $objectID, $sa ) {
-        $versions = self::getObjectVersions( $objectID );
+        $object = eZContentObject::fetch( $objectID );
+        if( $object instanceof eZContentObject === false ) {
+            return null;
+        }
 
         $ini     = eZINI::getSiteAccessIni( $sa, 'site.ini' );
         $locales = $ini->variable( 'RegionalSettings', 'SiteLanguageList' );
         foreach( $locales as $locale ) {
-            if( isset( $versions[$locale] ) ) {
-                return array(
-                    'data_map' => self::fetchObjectDataMap( $objectID, $versions[$locale] ),
-                    'language' => $locale
-                );
+            $dataMap = self::fetchObjectDataMap( $object->attribute( 'id' ), $object->attribute( 'current_version' ), $locale );
+            if( count( $dataMap ) === 0 ) {
+                continue;
             }
+
+            return array(
+                'data_map' => $dataMap,
+                'language' => $locale
+            );
         }
 
         return null;
     }
 
-    protected static function getObjectVersions( $objectID ) {
-        $conditions = array( 'contentobject_id' => $objectID );
-        $sort       = array( 'version' => 'desc' );
-
-        $return   = array();
-        $versions = eZPersistentObject::fetchObjectList(
-                eZContentObjectVersion::definition(), null, $conditions, $sort
-        );
-
-        foreach( $versions as $version ) {
-            $langCode = $version->initialLanguageCode();
-            if( isset( $return[$langCode] ) ) {
-                continue;
-            }
-
-            $return[$langCode] = $version;
-        }
-
-        return $return;
-    }
-
-    public static function fetchObjectDataMap( $objectID, eZContentObjectVersion $version ) {
+    public static function fetchObjectDataMap( $objectID, $version, $language ) {
         $dataMap = array();
-        $data    = $version->fetchAttributes(
-            $version->attribute( 'version' ), $objectID, self::getVersionLanguage( $version )
-        );
+        $data    = $version->fetchAttributes( $version, $objectID, $language );
         foreach( $data as $item ) {
             $dataMap[$item->contentClassAttributeIdentifier()] = $item;
         }
 
         return $dataMap;
-    }
-
-    protected static function getVersionLanguage( eZContentObjectVersion $version ) {
-        return $version->CurrentLanguage ? $version->CurrentLanguage : $version->attribute( 'initial_language' )->attribute( 'locale' );
     }
 
 }
