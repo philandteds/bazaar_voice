@@ -37,7 +37,7 @@ class BazaarVoiceFetchFunctions {
 
     public static function fetchObjectDataMap( $objectID, $version, $language ) {
         $dataMap = array();
-        $data    = $version->fetchAttributes( $version, $objectID, $language );
+        $data    = eZContentObjectVersion::fetchAttributes( $version, $objectID, $language );
         foreach( $data as $item ) {
             $dataMap[$item->contentClassAttributeIdentifier()] = $item;
         }
