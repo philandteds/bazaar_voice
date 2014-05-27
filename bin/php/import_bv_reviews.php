@@ -95,9 +95,10 @@ $attributesMap  = array(
     'create_date'               => 'SubmissionTime'
 );
 
-$k        = 1;
-$products = $dom->getElementsByTagName( 'Product' );
-$count    = (int) $products->length;
+$k                   = 1;
+$products            = $dom->getElementsByTagName( 'Product' );
+$count               = (int) $products->length;
+$clearCacheObjectIDs = array();
 foreach( $products as $product ) {
     $cli->output( str_repeat( '-', 80 ) );
     $memoryUsage = number_format( memory_get_usage( true ) / ( 1024 * 1024 ), 2 );
@@ -155,7 +156,8 @@ foreach( $products as $product ) {
             'creator_id'       => $ini->variable( 'UserSettings', 'UserCreatorID' ),
             'class_identifier' => $containerClass,
             'parent_node_id'   => $pNode->attribute( 'node_id' ),
-            'attributes'       => array( 'name' => $containerName )
+            'attributes'       => array( 'name' => $containerName ),
+            'section_id'       => $pNode->attribute( 'object' )->attribute( 'section_id' )
         );
         $object          = eZContentFunctions::createAndPublishObject( $params );
         $containerNodeID = $object->attribute( 'main_node_id' );
@@ -203,13 +205,16 @@ foreach( $products as $product ) {
             'remote_id'        => $remoteID,
             'class_identifier' => $reviewsClass,
             'parent_node_id'   => $containerNodeID,
-            'attributes'       => $attributes
+            'attributes'       => $attributes,
+            'section_id'       => $pNode->attribute( 'object' )->attribute( 'section_id' )
         );
         $object = eZContentFunctions::createAndPublishObject( $params );
         if( $object instanceof eZContentObject ) {
             $object->setAttribute( 'published', $attributes['create_date'] );
+            $object->setAttribute( 'modified', $attributes['create_date'] );
             $object->store();
 
+            $clearCacheObjectIDs[] = $pNode->attribute( 'contentobject_id' );
             $createdReviews++;
         }
     }
@@ -217,4 +222,39 @@ foreach( $products as $product ) {
     $message = '[' . date( 'c' ) . '] Created reviews: ' . $createdReviews . ', Skipped reviews: ' . $skippedReviews;
     $cli->output( $message );
 }
+
+$clearCacheObjectIDs = array_unique( $clearCacheObjectIDs );
+if( count( $clearCacheObjectIDs ) > 0 ) {
+    $message = '[' . date( 'c' ) . '] Clearing caches ...';
+    $cli->output( $message );
+
+    $doClearVarnish = class_exists( 'nxcVarnish' );
+    foreach( $clearCacheObjectIDs as $objectID ) {
+        $object = eZContentObject::fetch( $objectID );
+        if( $object instanceof eZContentObject === false ) {
+            continue;
+        }
+
+        // Clear eZP cache
+        eZContentCacheManager::clearContentCache( $objectID );
+
+        // Clear Varnish cache
+        $installationID = nxcVarnish::getInstallationID();
+        $nodeIDs        = nxcVarnishClearType::getNodeIDs( $object );
+        foreach( $nodeIDs as $nodeID ) {
+            $request = 'ban obj.http.X-eZPublish-NodeID == ' . $nodeID
+                . ' && obj.http.X-eZPublish-InstallationID == ' . $installationID;
+
+            try {
+                nxcVarnish::getInstance()->cli( $request, true );
+            } catch( Exception $e ) {
+                
+            }
+        }
+    }
+
+    $message = '[' . date( 'c' ) . '] Cache is cleared for ' . count( $clearCacheObjectIDs ) . ' object(s)';
+    $cli->output( $message );
+}
+
 $script->shutdown( 0 );
