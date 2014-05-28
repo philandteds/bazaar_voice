@@ -109,7 +109,19 @@ class BazaarVoiceFeedBase {
     }
 
     public static function htmlentities( $string ) {
-        $string = htmlentities( $string, ENT_COMPAT | ENT_XML1 );
+        $string = htmlentities( $string, ENT_COMPAT, 'UTF-8' );
+
+        $replaceMnemonics = array(
+            '&euml;'   => '&#235;',
+            '&pound;'  => '&#163;',
+            '&oslash;' => '&#248;',
+            '&rsquo;'  => '&#8217;',
+            '&lsquo;'  => '&#8216;',
+            '&trade;'  => '&#8482;'
+        );
+        foreach( $replaceMnemonics as $search => $replaceWith ) {
+            $string = str_replace( $search, $replaceWith, $string );
+        }
 
         return $string;
     }
