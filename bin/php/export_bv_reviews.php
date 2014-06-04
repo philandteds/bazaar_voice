@@ -111,8 +111,7 @@ foreach( $products as $product ) {
         $reviewNode->setAttribute( 'removed', 'false' );
         $reviewNode->appendChild( $doc->createElement( 'ModerationStatus', 'APPROVED' ) );
 
-        $name            = iconv( 'UTF-8', 'ISO-8859-1', $dataMap['name']->attribute( 'content' ) );
-        $displayName     = BazaarVoiceFeedBase::htmlentities( $name );
+        $displayName     = BazaarVoiceFeedBase::htmlentities( $dataMap['name']->attribute( 'content' ) );
         $userProfileNode = $doc->createElement( 'UserProfileReference' );
         $userProfileNode->setAttribute( 'id', 1 );
         $userProfileNode->appendChild( $doc->createElement( 'DisplayName', $displayName ) );
@@ -121,8 +120,7 @@ foreach( $products as $product ) {
         $reviewNode->appendChild( $userProfileNode );
 
         foreach( $attrsMap as $attr => $tag ) {
-            $content = iconv( 'UTF-8', 'ISO-8859-1', $dataMap[$attr]->attribute( 'content' ) );
-            $value   = BazaarVoiceFeedBase::htmlentities( $content );
+            $value = BazaarVoiceFeedBase::htmlentities( $dataMap[$attr]->attribute( 'content' ) );
             if( strlen( $value ) > 0 ) {
                 $reviewNode->appendChild( $doc->createElement( $tag, $value ) );
             }
