@@ -113,10 +113,11 @@ foreach( $products as $product ) {
 
         $displayName     = BazaarVoiceFeedBase::htmlentities( $dataMap['name']->attribute( 'content' ) );
         $userProfileNode = $doc->createElement( 'UserProfileReference' );
-        $userProfileNode->setAttribute( 'id', 1 );
+        $userProfileNode->setAttribute( 'id', md5( $displayName ) );
         $userProfileNode->appendChild( $doc->createElement( 'DisplayName', $displayName ) );
         $userProfileNode->appendChild( $doc->createElement( 'Anonymous', 'false' ) );
         $userProfileNode->appendChild( $doc->createElement( 'HyperlinkingEnabled', 'false' ) );
+        $userProfileNode->appendChild( $doc->createElement( 'ExternalId', md5( $displayName ) ) );
         $reviewNode->appendChild( $userProfileNode );
 
         foreach( $attrsMap as $attr => $tag ) {
