@@ -88,7 +88,7 @@ foreach( $products as $product ) {
 
     $productSKU = BazaarVoiceFeedProducts::getProductSKU( $pObject );
     if( strlen( $productSKU ) === 0 ) {
-        continue;
+        $productSKU = $product['node_id'];
     }
 
     $productNode = $doc->createElement( 'Product' );

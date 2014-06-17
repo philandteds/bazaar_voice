@@ -118,6 +118,11 @@ foreach( $products as $product ) {
 
     // fetch product node
     $pNode = ContentSyncImportHandlerXrowProduct::fetchNode( $productID . '|' . $version );
+    // try to handle product id as node_id
+    if( $pNode instanceof eZContentObjectTreeNode === false ) {
+        $pNode = eZContentObjectTreeNode::fetch( $product->getAttribute( 'id' ) );
+    }
+
     if( $pNode instanceof eZContentObjectTreeNode === false ) {
         $message = '[' . date( 'c' ) . '] Unable to fetch "' . $product->getAttribute( 'id' ) . '" product';
         $cli->output( $message );
