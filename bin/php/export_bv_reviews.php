@@ -73,8 +73,11 @@ $root->setAttribute( 'name', $bvIni->variable( 'ProductsFeed', 'Name' ) );
 $root->setAttribute( 'extractDate', date( 'c' ) );
 $doc->appendChild( $root );
 
-$counter  = 0;
-$products = eZContentObjectTreeNode::subTreeByNodeID( $productsFetchParams, 1 );
+$containerPath = $bvIni->variable( 'ProductsFeed', 'ProductContainerPath' );
+$parentNode    = eZContentObjectTreeNode::fetchByURLPath( $containerPath, false );
+$parentNodeID  = is_array( $parentNode ) ? $parentNode['node_id'] : 1;
+$counter       = 0;
+$products      = eZContentObjectTreeNode::subTreeByNodeID( $productsFetchParams, $parentNodeID );
 foreach( $products as $product ) {
     $reviews = eZContentObjectTreeNode::subTreeByNodeID( $reviewsFetchParams, $product['node_id'] );
     if( count( $reviews ) === 0 ) {
@@ -87,9 +90,6 @@ foreach( $products as $product ) {
     }
 
     $productSKU = BazaarVoiceFeedProducts::getProductSKU( $pObject );
-    if( strlen( $productSKU ) === 0 ) {
-        $productSKU = $product['node_id'];
-    }
 
     $productNode = $doc->createElement( 'Product' );
     $productNode->setAttribute( 'id', $productSKU );

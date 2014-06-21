@@ -27,6 +27,10 @@ class BazaarVoiceFeedBase {
     }
 
     protected static function fetchNodes( array $classes ) {
+        $containerPath = self::$ini->variable( 'ProductsFeed', 'ProductContainerPath' );
+        $parentNode    = eZContentObjectTreeNode::fetchByURLPath( $containerPath, false );
+        $parentNodeID  = is_array( $parentNode ) ? $parentNode['node_id'] : 1;
+
         $fetchParams = array(
             'Depth'            => false,
             'Limitation'       => array(),
@@ -37,7 +41,7 @@ class BazaarVoiceFeedBase {
             'ClassFilterArray' => $classes
         );
 
-        return eZContentObjectTreeNode::subTreeByNodeID( $fetchParams, 1 );
+        return eZContentObjectTreeNode::subTreeByNodeID( $fetchParams, $parentNodeID );
     }
 
     protected static function getLanguageCode( $language ) {
