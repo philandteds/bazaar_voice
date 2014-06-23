@@ -341,9 +341,6 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         $externalID = str_replace( '/', '|', $externalID );
         $externalID = strtoupper( $externalID );
 
-        $externalID .= '_' . $object->attribute( 'main_node_id' );
-        $externalID = trim( $externalID, '_' );
-
         return self::htmlentities( $externalID );
     }
 
