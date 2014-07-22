@@ -29,8 +29,6 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         $this->processBrands();
         $this->processCateogires();
         $this->processProducts();
-
-        self::$dom->save( 'var/cache/p.xml' );
     }
 
     protected function processBrands() {
@@ -179,6 +177,11 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             self::getProductBrandID(),
             self::getProductCategoryID( $object )
         );
+
+        $UPCs = self::getProductUPCs( $object );
+        if( $UPCs !== null ) {
+            $attributes[] = $UPCs;
+        }
 
         $translatableAttributes = array(
             'Descriptions'    => array(),
@@ -362,6 +365,27 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         }
 
         return self::$dom->createElement( 'CategoryExternalId', $node->attribute( 'contentobject_id' ) );
+    }
+
+    protected static function getProductUPCs( eZContentObject $object ) {
+        $dataMap    = $object->attribute( 'data_map' );
+        $externalID = $dataMap['product_id']->attribute( 'content' );
+        $version    = $dataMap['version']->attribute( 'content' );
+
+        $db = eZDB::instance();
+        $q  = 'SELECT DISTINCT EAN FROM product WHERE EAN != "" AND ItemNumber = "' . $externalID . '" AND Version = "' . $version . '"';
+        $r  = $db->arrayQuery( $q );
+        if( count( $r ) === 0 ) {
+            return null;
+        }
+
+        $container = self::$dom->createElement( 'UPCs' );
+        foreach( $r as $row ) {
+            $UPC = self::$dom->createElement( 'UPC', $row['EAN'] );
+            $container->appendChild( $UPC );
+        }
+
+        return $container;
     }
 
 }
