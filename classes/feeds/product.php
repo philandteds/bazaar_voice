@@ -128,7 +128,8 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         $attributes = array(
             self::$dom->createElement( 'ExternalId', $object->attribute( 'id' ) )
         );
-
+        
+        $imageAliasesPriority   = array( 'large', 'medium', 'original' );
         $translatableAttributes = array(
             'Names'            => array(),
             'CategoryPageUrls' => array(),
@@ -142,11 +143,19 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             $image = $dataMap['image']->attribute( 'content' );
             if( $image instanceof eZContentObject && $image->attribute( 'class_identifier' ) === 'image' ) {
                 $imageDataMap = $image->attribute( 'data_map' );
-                $alias        = $imageDataMap['image']->attribute( 'content' )->attribute( 'original' );
-                if( (bool) $alias['is_valid'] ) {
-                    $url = $alias['url'];
+                $aliasHandler = $imageDataMap['image']->attribute( 'content' );
+                foreach( $imageAliasesPriority as $aliasName ) {
+                    if( $aliasHandler->hasAttribute( $aliasName ) === false ) {
+                        continue;
+                    }
 
-                    $translatableAttributes['ImageUrls'][$languageCode] = self::getStaticTranslatedURL( $languageCode, $url );
+                    $alias = $aliasHandler->attribute( $aliasName );
+                    if( (bool) $alias['is_valid'] ) {
+                        $url = $alias['url'];
+
+                        $translatableAttributes['ImageUrls'][$languageCode] = self::getStaticTranslatedURL( $languageCode, $url );
+                        break;
+                    }
                 }
             }
         }
@@ -183,6 +192,7 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             $attributes[] = $UPCs;
         }
 
+        $imageAliasesPriority   = array( 'large', 'medium', 'original' );
         $translatableAttributes = array(
             'Descriptions'    => array(),
             'ProductPageUrls' => array(),
@@ -198,11 +208,19 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
                 $image = eZContentObject::fetch( $images['relation_list'][0]['contentobject_id'] );
                 if( $image instanceof eZContentObject && $image->attribute( 'class_identifier' ) === 'image' ) {
                     $imageDataMap = $image->attribute( 'data_map' );
-                    $alias        = $imageDataMap['image']->attribute( 'content' )->attribute( 'original' );
-                    if( (bool) $alias['is_valid'] ) {
-                        $url = $alias['url'];
+                    $aliasHandler = $imageDataMap['image']->attribute( 'content' );
+                    foreach( $imageAliasesPriority as $aliasName ) {
+                        if( $aliasHandler->hasAttribute( $aliasName ) === false ) {
+                            continue;
+                        }
 
-                        $translatableAttributes['ImageUrls'][$languageCode] = self::getStaticTranslatedURL( $languageCode, $url );
+                        $alias = $aliasHandler->attribute( $aliasName );
+                        if( (bool) $alias['is_valid'] ) {
+                            $url = $alias['url'];
+
+                            $translatableAttributes['ImageUrls'][$languageCode] = self::getStaticTranslatedURL( $languageCode, $url );
+                            break;
+                        }
                     }
                 }
             }
