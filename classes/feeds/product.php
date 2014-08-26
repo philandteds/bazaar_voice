@@ -376,9 +376,9 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             return null;
         }
 
-        $container = self::$dom->createElement( 'UPCs' );
+        $container = self::$dom->createElement( 'EANs' );
         foreach( $r as $row ) {
-            $UPC = self::$dom->createElement( 'UPC', $row['EAN'] );
+            $UPC = self::$dom->createElement( 'EAN', $row['EAN'] );
             $container->appendChild( $UPC );
         }
 
