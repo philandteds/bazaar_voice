@@ -128,7 +128,7 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         $attributes = array(
             self::$dom->createElement( 'ExternalId', $object->attribute( 'id' ) )
         );
-        
+
         $imageAliasesPriority   = array( 'large', 'medium', 'original' );
         $translatableAttributes = array(
             'Names'            => array(),
@@ -357,7 +357,7 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
         $externalID = $dataMap['product_id']->attribute( 'content' );
         $version    = trim( $dataMap['version']->attribute( 'content' ) );
         if( strlen( $version ) > 0 ) {
-            $externalID .= '_' . $version;
+            $externalID .= '_' . str_replace( '.', '_', $version );
         }
         $externalID = str_replace( '/', '|', $externalID );
         $externalID = strtoupper( $externalID );
