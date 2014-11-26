@@ -112,9 +112,11 @@ foreach( $products as $product ) {
     }
 
     // extract product id and version
-    $parts     = explode( '_', $product->getAttribute( 'id' ) );
-    $productID = str_replace( '|', '/', $parts[0] );
-    $version   = isset( $parts[1] ) ? $parts[1] : '';
+    $productID = str_replace( '|', '/', $product->getAttribute( 'id' ) );
+    $parts     = explode( '_', $productID );
+    $productID = $parts[0];
+    $version   = count( $parts ) > 1 ? implode( '_', array_slice( $parts, 1 ) ) : '';
+    $version   = str_replace( '_', '.', $version );
 
     // fetch product node
     $pNode = ContentSyncImportHandlerXrowProduct::fetchNode( $productID . '|' . $version );
