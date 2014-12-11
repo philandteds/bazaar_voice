@@ -239,6 +239,9 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             self::getLanguageCode( $nameDataMap['language'] ) => $nameDataMap['data_map']['name']->attribute( 'content' )
         );
 
+        $name         = self::htmlentities( $nameDataMap['data_map']['name']->attribute( 'content' ) );
+        $attributes[] = self::$dom->createElement( 'Name', $name );
+
         foreach( $translatableAttributes as $attr => $values ) {
             $container = self::$dom->createElement( $attr );
 
