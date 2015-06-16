@@ -165,7 +165,7 @@ foreach( $products as $product ) {
             'section_id'       => $pNode->attribute( 'object' )->attribute( 'section_id' )
         );
         $object          = eZContentFunctions::createAndPublishObject( $params );
-        $containerNodeID = $object->attribute( 'main_node_id' );
+        if ($object) $containerNodeID = $object->attribute( 'main_node_id' );
     }
 
     if( $containerNodeID === null ) {
