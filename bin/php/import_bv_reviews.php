@@ -65,6 +65,7 @@ fclose( $h );
 $cli->output( '[' . date( 'c' ) . '] "' . $feedFile . '" is extracted' );
 chmod( $feedFile, 0755 );
 
+
 // Validate reviews feed
 if( file_exists( $feedFile ) === false ) {
     $cli->error( 'Reviews feed file "' . $feedFile . '" does not exist or it is not readable' );
@@ -92,7 +93,8 @@ $attributesMap  = array(
     'recommended'               => 'Recommended',
     'positive_feedbacks_number' => 'NumPositiveFeedbacks',
     'negative_feedbacks_number' => 'NumNegativeFeedbacks',
-    'create_date'               => 'SubmissionTime'
+    'create_date'               => 'SubmissionTime',
+    'moderationstatus'		=> 'ModerationStatus'
 );
 
 $k                   = 1;
@@ -183,6 +185,15 @@ foreach( $products as $product ) {
         // Check if current review is already imported
         $remoteID = 'BV_Review_' . $review->getAttribute( 'id' );
         if( eZContentObject::fetchByRemoteID( $remoteID ) instanceof eZContentObject ) {
+	    //Hide if existing review is REJECTED
+	    $reviewModerationStatusAttribute = $review->getElementsByTagName('ModerationStatus');
+	    if( $reviewModerationStatusAttribute->length != 0) {
+		$moderationStatusValue = (string) $reviewModerationStatusAttribute->item( 0 )->nodeValue;
+		if($moderationStatusValue == 'REJECTED') {
+		   $existingReviewObject = eZContentObject::fetchByRemoteID( $remoteID );
+	           updateVisibility($existingReviewObject,false);
+		}
+            }	    
             $skippedReviews++;
             continue;
         }
@@ -215,8 +226,13 @@ foreach( $products as $product ) {
         );
         $object = eZContentFunctions::createAndPublishObject( $params );
         if( $object instanceof eZContentObject ) {
+	    //If moderation status is REJECTED for the review. Just hide the review
+            if($attributes['moderationstatus'] == 'REJECTED' ) {
+            	updateVisibility($object, false);
+            }
+	    
             $object->setAttribute( 'published', $attributes['create_date'] );
-            $object->setAttribute( 'modified', $attributes['create_date'] );
+            $object->setAttribute( 'modified', $attributes['create_date'] );		
             $object->store();
 
             $clearCacheObjectIDs[] = $pNode->attribute( 'contentobject_id' );
@@ -262,4 +278,47 @@ if( count( $clearCacheObjectIDs ) > 0 ) {
     $cli->output( $message );
 }
 
+
 $script->shutdown( 0 );
+
+
+
+
+/**
+ * Function that sets the visibility of a node/subtree
+ * @param $object
+ * @param bool $visibility
+ */
+function updateVisibility( $object, $visibility = true ) {
+    $cli = eZCLI::instance();
+    $action = $visibility ? 'show' : 'hide';
+    $nodeAssigments = eZPersistentObject::fetchObjectList(
+			eZNodeAssignment::definition(),
+			null,
+			array(
+				'contentobject_id'      => $object->attribute( 'id' ),
+				'contentobject_version' => $object->attribute( 'current_version' )
+			),
+			null,
+			null,
+			true
+		);
+    foreach( $nodeAssigments as $nodeAssigment ) {
+	$node = $nodeAssigment->attribute( 'node' );
+	if( $node instanceof eZContentObjectTreeNode === false ) {
+	   continue;
+	}
+	if( (bool) !$node->attribute( 'is_hidden' ) === (bool) $visibility ) {
+	   continue;
+	}
+	if( $action == 'show' ) {
+	   eZContentObjectTreeNode::unhideSubTree( $node );
+	} 
+	else {
+	   $message = '[Hiding review for node : ' . $node->attribute ('node_id') . ' ]';
+           $cli->output( $message );
+	   eZContentObjectTreeNode::hideSubTree( $node );
+	}
+	   eZSearch::updateNodeVisibility( $node->attribute( 'node_id' ), $action );
+   }
+}
