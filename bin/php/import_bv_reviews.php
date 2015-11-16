@@ -35,7 +35,7 @@ $bvIni  = eZINI::instance( 'bazaar_voice.ini' );
 $server = $bvIni->variable( 'SFTP', 'Server' );
 $port = $bvIni->variable( 'SFTP', 'Port' );
 $conn = ssh2_connect($server, $port);
-if( ssh2_auth_password($conn, $bvIni->variable( 'FTP', 'Username' ), $bvIni->variable( 'FTP', 'Password' ) ) === false) {
+if( ssh2_auth_password($conn, $bvIni->variable( 'SFTP', 'Username' ), $bvIni->variable( 'SFTP', 'Password' ) ) === false) {
     $cli->error( 'Unable to connect to "' . $server . '" SFTP server' );
     $script->shutdown( 1 );
 }
