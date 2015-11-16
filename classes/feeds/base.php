@@ -97,15 +97,15 @@ class BazaarVoiceFeedBase {
     }
 
     protected function upload() {
-        $conn = ftp_connect( self::$ini->variable( 'FTP', 'Server' ) );
-        if( ftp_login( $conn, self::$ini->variable( 'FTP', 'Username' ), self::$ini->variable( 'FTP', 'Password' ) ) === false ) {
-            throw new Exception( 'Unable to connect to FTP server' );
+	$conn = ssh2_connect( self::$ini->variable( 'SFTP', 'Server' ), self::$ini->variable( 'SFTP', 'Port' ) );
+	if( ssh2_auth_password( $conn, self::$ini->variable( 'SFTP', 'Username' ), self::$ini->variable( 'SFTP', 'Password' ) ) === false ) {
+            throw new Exception( 'Unable to connect to SFTP server' );
         }
 
         $this->remoteFile = str_replace( 'UNIQUE_ID', date( 'dMY_His' ), $this->remoteFile );
-        ftp_chdir( $conn, dirname( $this->remoteFile ) );
-        if( ftp_put( $conn, basename( $this->remoteFile ), $this->localFile, FTP_BINARY ) === false ) {
-            throw new Exception( 'Unable to upload feed to the FTP server' );
+        //ftp_chdir( $conn, dirname( $this->remoteFile ) );
+	if( ssh2_scp_send( $conn, $this->localFile, $this->remoteFile ) === false ) {
+            throw new Exception( 'Unable to upload feed to the SFTP server' );
         }
 
         self::debug( 'Remote feed is uploaded to "' . $this->remoteFile . '"' );
