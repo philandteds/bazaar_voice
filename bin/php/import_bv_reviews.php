@@ -67,7 +67,6 @@ fclose( $h );
 $cli->output( '[' . date( 'c' ) . '] "' . $feedFile . '" is extracted' );
 chmod( $feedFile, 0755 );
 
-
 // Validate reviews feed
 if( file_exists( $feedFile ) === false ) {
     $cli->error( 'Reviews feed file "' . $feedFile . '" does not exist or it is not readable' );
@@ -96,7 +95,8 @@ $attributesMap  = array(
     'positive_feedbacks_number' => 'NumPositiveFeedbacks',
     'negative_feedbacks_number' => 'NumNegativeFeedbacks',
     'create_date'               => 'SubmissionTime',
-    'moderationstatus'		=> 'ModerationStatus'
+    'moderationstatus'		=> 'ModerationStatus',
+    'date'			=> 'SubmissionTime'
 );
 
 $k                   = 1;
@@ -214,6 +214,9 @@ foreach( $products as $product ) {
             } elseif( $attr == 'create_date' ) {
                 $value = strtotime( $value );
             }
+	      elseif( $attr == 'date' ) {
+		$value = strtotime( $value );
+	    }	
 
             $attributes[$attr] = $value;
         }
