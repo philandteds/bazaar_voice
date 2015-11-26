@@ -195,7 +195,14 @@ foreach( $products as $product ) {
 		   $existingReviewObject = eZContentObject::fetchByRemoteID( $remoteID );
 	           updateVisibility($existingReviewObject,false);
 		}
-            }	    
+            }
+	    
+	    $submissionDate = $review->getElementsByTagName('SubmissionTime');
+	    if($submissionDate->length !=0) {
+		$bvReviewDate = $submissionDate->item(0)->nodeValue;
+		updateReviewDateIfRequired($remoteID,$bvReviewDate);		
+	    }	    
+
             $skippedReviews++;
             continue;
         }
@@ -326,4 +333,30 @@ function updateVisibility( $object, $visibility = true ) {
 	}
 	   eZSearch::updateNodeVisibility( $node->attribute( 'node_id' ), $action );
    }
+}
+
+
+/**
+ * Function that updates the existing review date to SubmissionTime of BV review
+ * @param $remoteID
+ * @param $submissionDate
+ */
+
+function updateReviewDateIfRequired($remoteID, $submissionDate) {
+    $cli = eZCLI::instance();
+    if(!empty($remoteID) && !empty($submissionDate)) {
+	$object = eZContentObject::fetchByRemoteID( $remoteID );
+	$cli->output("\tChecking dates for existing review - " . $object->attribute('id'));
+	$dataMap = $object->DataMap();
+	$reviewDate = $dataMap['date']->DataInt;
+	$incomingSubmissionDate = strtotime($submissionDate);
+	
+	$cli->output("\tReview Date - " . $reviewDate  . " | BV Date -  " . $incomingSubmissionDate);
+	if($reviewDate != $incomingSubmissionDate) {
+	    $cli->output("Updating ezp review date to BV Submission Date");
+	    $reviewDateAttribute = $dataMap['date'];
+	    $reviewDateAttribute->setAttribute( 'data_int', $incomingSubmissionDate );
+	    $reviewDateAttribute->sync();
+        }
+    }
 }
