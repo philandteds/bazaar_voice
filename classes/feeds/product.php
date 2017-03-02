@@ -363,6 +363,7 @@ class BazaarVoiceFeedProducts extends BazaarVoiceFeedBase {
             $externalID .= '_' . $version;
         }
         $externalID = str_replace( '/', '|', $externalID );
+        $externalID = str_replace( '.', '_', $externalID );
         $externalID = strtoupper( $externalID );
 
         return self::htmlentities( $externalID );
