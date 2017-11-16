@@ -80,9 +80,6 @@ $root = $doc->createElementNS( ATOM_NS,'feed');
 $doc->appendChild($root);
 $root->setAttributeNS('http://www.w3.org/2000/xmlns/' ,'xmlns:g', MERCHANT_NS);
 
-$item = $doc->createElementNS(MERCHANT_NS, 'g:item_type', 'house');
-$root->appendChild($item);
-
 // headers
 $root->appendChild( $doc->createElementNS(ATOM_NS, 'title', $bvIni->variable( 'ProductsFeed', 'Name' ))); // link rel?
 $root->appendChild( $doc->createElementNS(ATOM_NS, 'updated', date( 'c' )));
