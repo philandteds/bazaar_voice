@@ -44,6 +44,12 @@ $productsClass = $bvIni->variable( 'ProductsFeed', 'ProductClasses' );
 
 $thisPriceGroup = $shopIni->variable('PriceSettings', 'PriceGroup');
 
+$feedName = $ini->variable('SiteSettings', 'SiteName') . ' ' . $ini->variable('RegionalSettings', 'Locale');
+$siteAccessUrl = $ini->variable('SiteSettings', 'SiteURL');
+if (stripos($siteAccessUrl, '//') === false) {
+    $siteAccessUrl = "https://$siteAccessUrl";
+}
+
 $attrsMap            = array(
     'title'  => 'Title',
     'review' => 'ReviewText',
@@ -57,14 +63,6 @@ $productsFetchParams = array(
     'AsObject'         => false,
     'ClassFilterType'  => 'include',
     'ClassFilterArray' => array( $productsClass )
-);
-$reviewsFetchParams  = array(
-    'Depth'            => false,
-    'Limitation'       => array(),
-    'LoadDataMap'      => false,
-    'AsObject'         => false,
-    'ClassFilterType'  => 'include',
-    'ClassFilterArray' => array( $reviewsClass )
 );
 
 define('ATOM_NS', 'http://www.w3.org/2005/Atom');
@@ -81,7 +79,7 @@ $doc->appendChild($root);
 $root->setAttributeNS('http://www.w3.org/2000/xmlns/' ,'xmlns:g', MERCHANT_NS);
 
 // headers
-$root->appendChild( $doc->createElementNS(ATOM_NS, 'title', $bvIni->variable( 'ProductsFeed', 'Name' ))); // link rel?
+$root->appendChild( $doc->createElementNS(ATOM_NS, 'title', htmlentities($feedName)));
 $root->appendChild( $doc->createElementNS(ATOM_NS, 'updated', date( 'c' )));
 
 $containerPath = $bvIni->variable( 'ProductsFeed', 'ProductContainerPath' );
@@ -113,6 +111,7 @@ foreach( $products as $product ) {
         $longCode = $variationData['LongCode'];
         if (array_key_exists($longCode, $availableVariants)) {
             $extraInformation = array(
+                'SiteAccessURL' => $siteAccessUrl,
                 'BrandName' => $brandName,
                 'Currency' => $currency,
                 'Locale' => $locale
@@ -179,6 +178,23 @@ function appendVariantEntryToFeed($productObject, $variant, $doc, $xmlParentElem
         return;
     }
 
+    // ensure this prouct is not hidden or disabled
+    if ($dataMap['disable_product']->content()) {
+        $cli->output("Product $variantName is flagged as disabled (disabled_product == true). Skipping.");
+        return;
+    }
+
+    if ($dataMap['hide_product']->content()) {
+        $cli->output("Product $variantName is flagged as hidden (hidden_product == true). Skipping.");
+        return;
+    }
+
+    if ($variant['Hidden']) {
+        $cli->output("Product $variantName is flagged as hidden (variants.hidden == true for SKU). Skipping.");
+        return;
+    }
+
+    // row is elegible to be written
     $entry = $doc->createElementNS(ATOM_NS, "entry");
     $xmlParentElement->appendChild($entry);
 
@@ -193,7 +209,8 @@ function appendVariantEntryToFeed($productObject, $variant, $doc, $xmlParentElem
     $entry->appendChild($doc->createElementNS(MERCHANT_NS, "g:description", $description));
 
     $url = $productObject->mainNode()->urlAlias();
-    eZURI::transformURI( $url, false, 'full' );
+    eZURI::transformURI( $url, false, 'relative' );
+    $url = $variant['SiteAccessURL'] . $url;
     $entry->appendChild($doc->createElementNS(MERCHANT_NS, "g:link", $url));
 
     $variantImageIds = explode(',', $variant['Imageid']);
@@ -224,6 +241,8 @@ function appendVariantEntryToFeed($productObject, $variant, $doc, $xmlParentElem
     if ($variant['OverridePrice'] == 1) {
         $entry->appendChild($doc->createElementNS(MERCHANT_NS, "g:sale_price", $variant['Override'] . ' ' . $variant['Currency']));
     }
+
+    // not handled: is_bundle, shipping, tax
 }
 
 function getProductSKU( eZContentObject $object ) {
